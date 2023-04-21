@@ -1,0 +1,121 @@
+#!/usr/bin/env node
+
+require('dotenv').config();
+const initializeDatabase = require('../dbs');
+const passport = require('passport');
+const createError = require('http-errors');
+const fileUpload = require('express-fileupload');
+const { Server } = require("socket.io");
+
+
+var app = require('../app');
+
+var http = require('http');
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+initializeDatabase((err, dbC) => {
+
+  if (err) {
+    console.error('Failed to make database connection!')
+    console.error(err)
+    process.exit(1)
+    return;
+  }
+  const dbClient = dbC['dbs'];
+  app.set('trust proxy', 1)
+  app.use(passport.initialize());
+
+  app.use(fileUpload({
+    parseNested: true,
+    safeFileNames: true,
+    preserveExtension: true
+  }));
+  require('../auth/auth')(dbClient, passport);
+
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    path:'/socketApi',
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+  var liveUsers = {};
+  io.on('connection', (socket) => {
+    const userName = socket.handshake.query['userName'];
+
+    liveUsers[userName] = socket;
+  });
+  const webAPI = require('../routes')(dbClient, passport, liveUsers)
+  app.use('/api', webAPI);
+
+
+  const webAdminAPI = require('../routes/admin')(dbClient, passport, liveUsers)
+  app.use('/adminApi', webAdminAPI);
+
+  // catch 404 and forward to error handler
+  app.use(function (req, res, next) {
+    next(createError(404));
+  });
+
+  // error handler
+  app.use(function (err, req, res, next) {
+    res.locals.message = 'Access Denied.';
+    res.locals.error = req.app.get('env') === 'development' ? {
+      status: err
+    } : {
+      status: 'Not Authorized ...!'
+    };
+
+    res.status(err.status || 500);
+    res.send(res.locals.error);
+  });
+
+  server.on('error', onError);
+  server.listen(port, () => {
+    console.log('server is running')
+  });
+
+  process.on('SIGTERM', () => {
+    dbClient.close();
+    server.close(() => {
+    })
+  })
+})
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+  if (isNaN(port)) {
+    return val;
+  }
+  if (port >= 0) {
+    return port;
+  }
+  return false;
+}
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string' ?
+    'Pipe ' + port :
+    'Port ' + port;
+
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+

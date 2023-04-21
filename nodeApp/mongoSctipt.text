@@ -1,0 +1,2 @@
+db.profile.createIndex({"saveName": 1}, {unique: true});
+db.audit.deleteMany({"#controlled_copy": null});
