@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config ver='1.0'>
+	<buildinfo>
+		<app>Print Control Services</app>
+		<abbr>PCS</abbr>
+		<version>3.0</version>
+		<build>002</build>
+		<date>05-April-2023</date>
+		<copyright>(c) Copyright Impact Systems, Inc. 2006-2030.</copyright>
+		<url>visit http://www.impactsystems.com</url>
+		<about></about>
+	</buildinfo>
+</config>
