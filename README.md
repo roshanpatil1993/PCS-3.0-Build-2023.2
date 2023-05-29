@@ -16,6 +16,7 @@ Create a folder inside this resources folder with name as `License` and place yo
 
 # Angular
 
+
 # PrintUtility Installation steps
 1. Download & extract the printutility-Installer zip file.
 2. Navigate to PrintUtility-installer-PrintUtility_master > ValidationPrintUtility > Debug > ValidationPrintUtility.msi
