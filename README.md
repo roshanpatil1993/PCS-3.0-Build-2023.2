@@ -15,3 +15,5 @@ Create a folder with name `resources`, one directory before node code.
 Create a folder inside this resources folder with name as `License` and place your licence file there.
 
 # Angular
+
+# PrintUtility Installer 
