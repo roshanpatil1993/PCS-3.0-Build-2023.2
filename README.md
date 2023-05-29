@@ -17,3 +17,4 @@ Create a folder inside this resources folder with name as `License` and place yo
 # Angular
 
 # PrintUtility Installer 
+Download the PrintUtility-Installer.zip file & install on the local machine.
