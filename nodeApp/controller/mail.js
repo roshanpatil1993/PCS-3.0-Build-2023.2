@@ -15,91 +15,123 @@ module.exports = () => {
     });
 
     async function wrappedSendMail(mailOptions) {
-        return new Promise((resolve, reject) => {
-            transporter.sendMail(mailOptions, function (error, info) {
-                if (error) {
-                    reject(error);
-                }
-                else {
-                    resolve(info.response);
-                }
+        const log = logger("wrappedSendMail")
+        log.info(CONSTANTS.SOF)
+        try {
+            return new Promise((resolve, reject) => {
+                transporter.sendMail(mailOptions, function (error, info) {
+                    if (error) {
+                        reject(error);
+                    }
+                    else {
+                        log.info("Email sent successfully")
+                        resolve(info.response);
+                    }
+                });
             });
-        });
+        } catch (error) {
+           log.error(CONSTANTS.ERROR_OCCURED + error)
+            req.error = CONSTANTS.SERVER_ERROR;
+            req.errorCode = 500;
+        }
+        log.info(CONSTANTS.EOF)
     }
 
     function getMailOption(to) {
-        let mailOption = {};
-        switch (process.env.environment) {
-            case 'development':
-                mailOption = {
-                    from: `"printer-app-dev" <${process.env.MAIL_FROM}>`,
-                    to: ["vikas@zogato.com", "nupura.deshmukh@impactsystems.com","bhushan.deore@impactsystems.com"],
-                }
-                break;
-            case 'test':
-                mailOption = {
-                    from: `"printer-app-test" <${process.env.MAIL_FROM}>`,
-                    to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com","bhushan.deore@impactsystems.com"],
-                }
-                break;
-            case 'demo':
-                mailOption = {
-                    from: `"printer-app-demo" <${process.env.MAIL_FROM}>`,
-                    to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com","bhushan.deore@impactsystems.com"],
-                }
-                break;
-            case 'prod':
-                mailOption = {
-                    from: `"printer-app" <${process.env.MAIL_FROM}>`,
-                    to: to,
-                }
-                break;
-            default:
-                mailOption = {
-                    from: `"printer-app-default" <${process.env.MAIL_FROM}>`,
-                    to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com","bhushan.deore@impactsystems.com"],
-                }
-                break;
+        const log = logger("getMailOption")
+        log.info(CONSTANTS.SOF)
+        try {
+            let mailOption = {};
+            switch (process.env.environment) {
+                case 'development':
+                    log.info(CONSTANTS.CASE_SELECTION + "development")
+                    mailOption = {
+                        from: `"printer-app-dev" <${process.env.MAIL_FROM}>`,
+                        to: ["vikas@zogato.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+                    }
+                    break;
+                case 'test':
+                    log.info(CONSTANTS.CASE_SELECTION + "test")
+                    mailOption = {
+                        from: `"printer-app-test" <${process.env.MAIL_FROM}>`,
+                        to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+                    }
+                    break;
+                case 'demo':
+                    log.info(CONSTANTS.CASE_SELECTION + "demo")
+                    mailOption = {
+                        from: `"printer-app-demo" <${process.env.MAIL_FROM}>`,
+                        to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+                    }
+                    break;
+                case 'prod':
+                    log.info(CONSTANTS.CASE_SELECTION + "prod")
+                    mailOption = {
+                        from: `"printer-app" <${process.env.MAIL_FROM}>`,
+                        to: to,
+                    }
+                    break;
+                default:
+                    log.info(CONSTANTS.CASE_SELECTION + "default")
+                    mailOption = {
+                        from: `"printer-app-default" <${process.env.MAIL_FROM}>`,
+                        to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+                    }
+                    break;
+            }
+            log.info(CONSTANTS.EOF)
+            return mailOption;
+        } catch (error) {
+            log.error(CONSTANTS.ERROR_OCCURED + error)
+            req.error = CONSTANTS.SERVER_ERROR;
+            req.errorCode = 500;
         }
-        return mailOption;
     }
 
     async function recallInit(docs) {
         const log = logger("recallInit")
-        log.info("*****start of function*****")
-        let re = [];
-       try {
-         for (let i = 0; i < docs.length; i++) {
-             const doc = docs[i];
-             const to = doc['#recipient'];
-             const tos =to.email;
-             if (tos.length > 0){
-             const docId = doc['#printCopyNo'];
-             const mailOption = getMailOption(tos);
-             mailOption.subject = `ReCall-Doc || ${docId}`;
-             mailOption.text = `Recall task is pending for Document ${doc['@infocardNumber']} version ${doc['@revision']}\nPlease check the details in PCS inbox.`; 
-             const r = await wrappedSendMail(mailOption);
-             re.push(r);
-             }
-                else{
-                    log.warn(CONSTANTS.EMAIL_MISSING + " for " + to.name )
+        log.info(CONSTANTS.SOF)
+        try {
+            log.debug("Inside Docs :: " + JSON.stringify(docs))
+            let re = [];
+            for (let i = 0; i < docs.length; i++) {
+                const doc = docs[i];
+                const to = doc['#recipient'];
+                const tos = to.email;
+                log.debug("Inside tos (email of recipient) :: " + tos)
+                if (tos.length > 0) {
+                    const docId = doc['#printCopyNo'];
+                    const mailOption = getMailOption(tos);
+                    mailOption.subject = `ReCall-Doc || ${docId}`;
+                    mailOption.text = `Recall task is pending for Document ${doc['@infocardNumber']} version ${doc['@revision']}\nPlease check the details in PCS inbox.`;
+                    log.debug("Inside mailoption :: " + JSON.stringify(mailOption))
+                    const r = await wrappedSendMail(mailOption);
+                    re.push(r);
+                    log.debug("Inside re :: " + JSON.stringify(re))
                 }
-         }
-         log.info("*****End of function*****")
-         return re;
-       } catch (error) {
-        log.error("Error Occured:: " +error)
-       }
+                else {
+                    log.warn(CONSTANTS.EMAIL_MISSING + " " + to.name)
+                }
+            }
+            log.info(CONSTANTS.EOF)
+            return re;
+        } catch (error) {
+            log.error(CONSTANTS.ERROR_OCCURED + error)
+            req.error = CONSTANTS.SERVER_ERROR;
+            req.errorCode = 500;
+        }
     }
 
     async function recallInitMail(req, res, next) {
+        const log = logger("recallInitMail")
+        log.info(CONSTANTS.SOF)
         const result = await recallInit(req.payload);
-       
         if (result) {
             next();
-        }else{
+        } else {
             next();
         }
+        log.info(CONSTANTS.EOF)
     }
 
     return {

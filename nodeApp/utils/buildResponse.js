@@ -14,6 +14,9 @@ exports.send = (req, res) => {
     if (req.count) {
       responseObj.count = req.count;
     }
+    if (req.msg) {
+      responseObj.message = req.msg;
+    }
     if (req.token) {
       responseObj.token = req.token;
     }
