@@ -162,12 +162,12 @@ module.exports = (dbClient, passport) => {
             eventType: 'Add Internal User',
             name: req.payload.formattedName
           };
-          req.msg = "Internal user added successfully"
+          req.msg = CONSTANTS.INTERNAL_USER_ADDED_SUCCESSFULLY
           log.info("Internal user added successfully")
           log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
           next();
         } else {
-          req.error = "Failed to add an Internal user";
+          req.error = CONSTANTS.INTERNAL_USER_ADDED_FAILED;
           req.errorCode = 500;
           next();
         }
@@ -214,12 +214,12 @@ module.exports = (dbClient, passport) => {
             eventType: 'Update Internal User',
             name: req.payload.formattedName
           };
-          req.msg = "Internal user updated successfully"
+          req.msg = "Internal User updated successfully"
           log.info("Internal user updated successfully")
           log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
           next();
         } else {
-          req.error = "Failed to update an Internal user";
+          req.error = "Failed to update an Internal User";
           req.errorCode = 500;
           next();
         }
@@ -247,7 +247,7 @@ module.exports = (dbClient, passport) => {
             eventType: 'Delete Internal User',
             name: user.formattedName
           };
-          req.msg = "Internal user deleted successfully"
+          req.msg = "Internal User deleted successfully"
           log.info("Internal user deleted successfully")
           log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
           next();
@@ -555,12 +555,12 @@ module.exports = (dbClient, passport) => {
             eventType: 'Add External User',
             name: req.payload.formattedName
           };
-          req.msg = "External user added successfully"
+          req.msg = "External User added successfully"
           log.info("External user added successfully")
           log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
           next();
         } else {
-          req.error = "Failed to add an External user";
+          req.error = "Failed to add an External User";
           req.errorCode = 500;
           next();
         }
@@ -593,7 +593,7 @@ module.exports = (dbClient, passport) => {
           eventType: 'Delete External User',
           name: user.formattedName
         };
-        req.msg = "External user deleted successfully"
+        req.msg = "External User deleted successfully"
         log.info("External user deleted successfully")
         log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
         next();

@@ -661,13 +661,13 @@ module.exports = (dbClient, passport) => {
                     eventType: 'Delete Profile Mapping',
                     name: req.payload.profileName
                 };
-                req.msg = "Profile Document Infocard Type mapping deleted successfully"
+                req.msg = "Profile - Document Infocard Type mapping deleted successfully"
                 log.info("Profile Document Infocard Type mapping deleted successfully")
                 log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
                 next();
             } else {
                 log.error("Failed to delete a Profile Document Infocard Type Mapping")
-                req.error = "Failed to delete a Profile Document Infocard Type Mapping";
+                req.error = "Failed to delete a Profile-Document Infocard Type Mapping";
                 req.errorCode = 400;
                 next();
             }
@@ -693,6 +693,7 @@ module.exports = (dbClient, passport) => {
                 }
             }, { returnOriginal: false });
             if (result && result.ok) {
+                req.msg = "Profile Mapped successfully"
                 next();
             } else {
                 log.warn(CONSTANTS.PROFILE_MAPPING_ERROR)

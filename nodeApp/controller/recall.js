@@ -45,19 +45,19 @@ module.exports = (dbClient, passport) => {
         if (result.result.ok == 1) {
           const docs = await db.collection(printCollectionName).find(query, { "#recipient": 1, "#printCopyNo": 1, "@infocardNumber": 1, "@revision": 1, "#type": 1 }).toArray();
           req.payload = docs;
-          req.msg = "Recall info updated successfully"
+          req.msg = CONSTANTS.RECALL_SUCCESS
           log.info("Recall info updated successfully")
           log.debug(`Request payload :: ${req.payload}`)
           next();
         }
         else {
-          log.error(CONSTANTS.INCORRECT_DATA)
+          log.error(CONSTANTS.RECALL_FAILED)
           req.error = CONSTANTS.INCORRECT_DATA;
           req.errorCode = 400;
           next();
         }
       } else {
-        log.error(CONSTANTS.INCORRECT_DATA)
+        log.error(CONSTANTS.RECALL_FAILED)
         req.error = CONSTANTS.INCORRECT_DATA;
         req.errorCode = 400;
         next();
@@ -160,12 +160,13 @@ module.exports = (dbClient, passport) => {
         });
         log.debug(`Result of ${printCollectionName} :: ${JSON.stringify(result)}`)
         req.payload = result.value;
+        req.msg = CONSTANTS.RECALL_COMPLETE_SUCCESS
         log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
         log.debug(`Request payload :: ${JSON.stringify(req.payload)}`)
         next();
       } else {
         req.payload = {};
-        req.error = CONSTANTS.INCORRECT_DATA;
+        req.error = CONSTANTS.RECALL_COMPLETE_FAIL;
         log.warn(CONSTANTS.INCORRECT_DATA)
         next();
       }
@@ -229,11 +230,12 @@ module.exports = (dbClient, passport) => {
       log.debug(`Inside results :: ${JSON.stringify(results)}`)
       if (results.nMatched >= 1 && results.nModified >= 1) {
         req.payload = updatedIdArr;
+        req.msg = CONSTANTS.SAVE_RECONCILE_SUCCESS
         log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
         next();
       } else {
         req.payload = [];
-        req.error = CONSTANTS.INCORRECT_DATA;
+        req.error = CONSTANTS.SAVE_RECONCILE_FAIL;
         req.errorCode = 400;
         log.warn(CONSTANTS.INCORRECT_DATA)
         next();
@@ -270,6 +272,7 @@ module.exports = (dbClient, passport) => {
         returnOriginal: false
       });
       req.payload = result.value;
+      req.msg = CONSTANTS.DUE_DATE_UPDATE_SUCCESS
       log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
       next();
     } catch (error) {
