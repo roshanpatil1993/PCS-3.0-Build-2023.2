@@ -201,8 +201,8 @@ module.exports = (dbClient, passport) => {
                     eventType: 'Delete Printer',
                     name: req.payload.name
                 };
-                req.msg = "Printer deleted successfull"
-                log.info("Printer deleted successfull")
+                req.msg = "Printer deleted successfully"
+                log.info("Printer deleted successfully")
                 log.debug(CONSTANTS.REQ_PAYLOAD + JSON.stringify(req.payload))
                 next();
             } else {

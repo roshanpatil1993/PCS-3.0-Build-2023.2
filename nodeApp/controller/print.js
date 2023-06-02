@@ -55,7 +55,7 @@ module.exports = (dbClient, passport) => {
         imp_issued_print_only,
         imp_controlled_print_reprint,
         imp_controlled_print_only,
-        imp_recipient_only
+        imp_recipient
       } = req.body.roles;
 
       const db = dbClient.db(dbName);
@@ -120,7 +120,7 @@ module.exports = (dbClient, passport) => {
             case imp_reconciliation || imp_admin:
               // query["$or"] = [{"#recipient.userName": req.body.username},{"#printOwner.userName": req.body.username}];
               break;
-            case imp_issued_print_coordinator || imp_controlled_print_coordinator || imp_issued_print_reprint || imp_issued_print_only || imp_controlled_print_reprint || imp_controlled_print_only || imp_recipient_only:
+            case imp_issued_print_coordinator || imp_controlled_print_coordinator || imp_issued_print_reprint || imp_issued_print_only || imp_controlled_print_reprint || imp_controlled_print_only || imp_recipient:
               log.error(CONSTANTS.ERROR_OCCURED + CONSTANTS.NO_ACCESS, "user with imp_reconciliation and imp_admin role can access this page");
               req.error = CONSTANTS.NO_ACCESS;
               req.errorCode = 400;
@@ -193,8 +193,8 @@ module.exports = (dbClient, passport) => {
             case imp_controlled_print_reprint || imp_controlled_print_only:
               query["#userId.userName"] = req.body.username;
               break;
-            case imp_reconciliation || imp_controlled_print_coordinator || imp_issued_print_reprint || imp_issued_print_only || imp_recipient_only:
-              log.error(CONSTANTS.ERROR_OCCURED + CONSTANTS.NO_ACCESS, "user with imp_reconciliation || imp_controlled_print_coordinator || imp_issued_print_reprint || imp_issued_print_only || imp_recipient_only don't have access this page");
+            case imp_reconciliation || imp_controlled_print_coordinator || imp_issued_print_reprint || imp_issued_print_only || imp_recipient:
+              log.error(CONSTANTS.ERROR_OCCURED + CONSTANTS.NO_ACCESS, "user with imp_reconciliation || imp_controlled_print_coordinator || imp_issued_print_reprint || imp_issued_print_only || imp_recipient don't have access this page");
               req.error = CONSTANTS.NO_ACCESS;
               req.errorCode = 400;
               break;
@@ -232,7 +232,7 @@ module.exports = (dbClient, passport) => {
           case imp_issued_print_reprint || imp_controlled_print_reprint:
             query["#userId.userName"] = req.body.username;
             break;
-          case imp_recipient_only:
+          case imp_recipient:
             query["#recipient.userName"] = req.body.username;
             break;
           case imp_reconciliation || imp_issued_print_only || imp_controlled_print_only:

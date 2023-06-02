@@ -41,7 +41,7 @@ module.exports = (dbClient, passport) => {
         imp_issued_print_only,
         imp_controlled_print_reprint,
         imp_controlled_print_only,
-        imp_recipient_only
+        imp_recipient
       } = req.body.roles;
 
       log.debug(CONSTANTS.REQ_BODY + JSON.stringify(req.body))
@@ -94,7 +94,7 @@ module.exports = (dbClient, passport) => {
         case imp_issued_print_reprint || imp_issued_print_only || imp_controlled_print_reprint || imp_controlled_print_only:
           query["#printOwner.userName"] = req.body.username;
           break;
-        case imp_recipient_only:
+        case imp_recipient:
           query["#recipient.userName"] = req.body.username;
           break;
         default:
@@ -188,7 +188,7 @@ module.exports = (dbClient, passport) => {
           });
         }
         db.collection(auditCollectionName).insertMany(auditLogObjs);
-        req.msg = "Recall Audit saved successfully"
+        // req.msg = "Recall Audit saved successfully"
         log.info("Recall Audit saved successfully")
         next();
       } else {
@@ -268,7 +268,7 @@ module.exports = (dbClient, passport) => {
           }
         }
         db.collection(auditCollectionName).insertMany(auditLogObjs);
-        req.msg = "Reconcile Audit saved successfully"
+        // req.msg = "Reconcile Audit saved successfully"
         log.info("Reconcile Audit saved successfully")
         next();
       } else {
@@ -311,7 +311,7 @@ module.exports = (dbClient, passport) => {
           "comment": "--"
         };
         db.collection(auditCollectionName).insert(auditLogObj);
-        req.msg = "UpdateDueDate Audit saved successfully"
+        // req.msg = "UpdateDueDate Audit saved successfully"
         log.info("UpdateDueDate Audit saved successfully")
         next();
       } else {
