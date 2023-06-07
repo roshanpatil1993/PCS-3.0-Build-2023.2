@@ -31,8 +31,6 @@ module.exports = () => {
             });
         } catch (error) {
            log.error(CONSTANTS.ERROR_OCCURED + error)
-            req.error = CONSTANTS.SERVER_ERROR;
-            req.errorCode = 500;
         }
         log.info(CONSTANTS.EOF)
     }
@@ -83,8 +81,6 @@ module.exports = () => {
             return mailOption;
         } catch (error) {
             log.error(CONSTANTS.ERROR_OCCURED + error)
-            req.error = CONSTANTS.SERVER_ERROR;
-            req.errorCode = 500;
         }
     }
 
@@ -99,7 +95,7 @@ module.exports = () => {
                 const to = doc['#recipient'];
                 const tos = to.email;
                 log.debug("Inside tos (email of recipient) :: " + tos)
-                if (tos.length > 0) {
+                if (!(tos==undefined || tos == 'undefined') && tos.length > 0) {
                     const docId = doc['#printCopyNo'];
                     const mailOption = getMailOption(tos);
                     mailOption.subject = `ReCall-Doc || ${docId}`;
@@ -117,8 +113,6 @@ module.exports = () => {
             return re;
         } catch (error) {
             log.error(CONSTANTS.ERROR_OCCURED + error)
-            req.error = CONSTANTS.SERVER_ERROR;
-            req.errorCode = 500;
         }
     }
 
