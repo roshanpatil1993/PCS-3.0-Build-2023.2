@@ -418,7 +418,7 @@ module.exports = (dbClient, passport) => {
                   overlayObj[field.key] = resultDocument[field.key];
                   break;
                 case '#batchNumber':
-                  overlayObj[field.key] = resultDocument["#batchNumber"];
+                  overlayObj[field.key] = req.body["#batchNumber"]; //11163: BatchNumber is not getting updated
                   break;
               }
             }
