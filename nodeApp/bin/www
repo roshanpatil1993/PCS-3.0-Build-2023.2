@@ -6,6 +6,8 @@ const passport = require('passport');
 const createError = require('http-errors');
 const fileUpload = require('express-fileupload');
 const { Server } = require("socket.io");
+const logger = require('../utils/logger');
+const CONSTANTS = require('../constants/messages')
 
 
 var app = require('../app');
@@ -75,7 +77,9 @@ initializeDatabase((err, dbC) => {
 
   server.on('error', onError);
   server.listen(port, () => {
-    console.log('server is running')
+    const log = logger("www")
+    log.info(CONSTANTS.SERVER_STARTED)
+    console.log(CONSTANTS.SERVER_STARTED)
   });
 
   process.on('SIGTERM', () => {

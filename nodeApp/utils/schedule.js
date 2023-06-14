@@ -12,7 +12,7 @@ const validateLicenseCollectionName = process.env.VALIDATE_LICENSE   //
 module.exports = (dbClient, liveUsers) => {
   const mail = require("../controller/mail")();
   const logger = require('../utils/logger');
-const CONSTANTS = require("../constants/messages");
+  const CONSTANTS = require("../constants/messages");
   const notification = require("../controller/notification")(dbClient, liveUsers);
 
   const transporter = nodemailer.createTransport({
@@ -27,48 +27,66 @@ const CONSTANTS = require("../constants/messages");
   });
 
   function getMailOption(to) {
-    let mailOption = {};
-    switch (process.env.environment) {
-      case 'development':
-        mailOption = {
-          from: `"printer-app-dev" <${process.env.MAIL_FROM}>`,
-          to: ["vikas@zogato.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
-        }
-        break;
-      case 'test':
-        mailOption = {
-          from: `"printer-app-test" <${process.env.MAIL_FROM}>`,
-          to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
-        }
-        break;
-      case 'demo':
-        mailOption = {
-          from: `"printer-app-demo" <${process.env.MAIL_FROM}>`,
-          to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
-        }
-        break;
-      case 'prod':
-        mailOption = {
-          from: `"printer-app" <${process.env.MAIL_FROM}>`,
-          to: to,
-        }
-        break;
-      default:
-        mailOption = {
-          from: `"printer-app-default" <${process.env.MAIL_FROM}>`,
-          to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
-        }
-        break;
+    const log = logger("getMailOption")
+    log.info(CONSTANTS.SOF)
+    try {
+      let mailOption = {};
+      switch (process.env.environment) {
+        case 'development':
+          log.info(CONSTANTS.CASE_SELECTION + "development")
+          mailOption = {
+            from: `"printer-app-dev" <${process.env.MAIL_FROM}>`,
+            to: ["vikas@zogato.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+          }
+          break;
+        case 'test':
+          log.info(CONSTANTS.CASE_SELECTION + "test")
+          mailOption = {
+            from: `"printer-app-test" <${process.env.MAIL_FROM}>`,
+            to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+          }
+          break;
+        case 'demo':
+          log.info(CONSTANTS.CASE_SELECTION + "demo")
+          mailOption = {
+            from: `"printer-app-demo" <${process.env.MAIL_FROM}>`,
+            to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+          }
+          break;
+        case 'prod':
+          log.info(CONSTANTS.CASE_SELECTION + "prod")
+          mailOption = {
+            from: `"printer-app" <${process.env.MAIL_FROM}>`,
+            to: to,
+          }
+          break;
+        default:
+          log.info(CONSTANTS.CASE_SELECTION + "default")
+          mailOption = {
+            from: `"printer-app-default" <${process.env.MAIL_FROM}>`,
+            to: ["aniket.raje@impactsystems.com", "nupura.deshmukh@impactsystems.com", "bhushan.deore@impactsystems.com"],
+          }
+          break;
+      }
+      log.info(CONSTANTS.EOF)
+      return mailOption;
+    } catch (error) {
+      log.error(CONSTANTS.ERROR_OCCURED + error)
+      req.error = CONSTANTS.SERVER_ERROR;
+      req.errorCode = 500;
     }
-    return mailOption;
   }
 
   function sendOverdueMailBulk(mailOptions, next) {
+    const log = logger("sendOverdueMailBulk")
+    log.info(CONSTANTS.SOF)
     mailOptions.forEach((mailOption, index) => {
       const to = mailOption['to'];
+      log.debug("Inside to (email of recipient) :: " + to)
       const sendMailOption = getMailOption(to);
       sendMailOption.subject = `Overdue-Docs Notification`;
       sendMailOption.html = getTable(mailOption);
+      log.debug("Inside sendMailOption :: " + JSON.stringify(sendMailOption))
       transporter.sendMail(sendMailOption, (error, info) => {
         if (index === mailOptions.length - 1) {
           next();
@@ -76,6 +94,7 @@ const CONSTANTS = require("../constants/messages");
       });
       next();
     });
+    log.info(CONSTANTS.EOF)
   }
 
   function getTable(mailOption) {
@@ -105,7 +124,6 @@ const CONSTANTS = require("../constants/messages");
 
 
 
-
   function getDate(date, type) {
     if (date) {
       const dateArray = date.split("-");
@@ -126,132 +144,155 @@ const CONSTANTS = require("../constants/messages");
 
   async function reconcileOverdueEmailFun() {
     const log = logger("reconcileOverdueEmailFun")
-    const db = dbClient.db(dbName);
-    const currentDate = getUTCDate(new Date());
-    const findQ = {
-      '#type': "IP",
-      '#dueDate': { '$lt': getDate(currentDate, "") },
-      'isOverdue': null,
-      '#printStatus': 'Successful'
-    };
-    const result = await db.collection(printCollectionName).find(findQ).toArray();
-    if (result) {
-      const users = {};
-      result.forEach(doc => {
-        const user = doc['#userId'].userName;
-        if (users[user] === undefined) {
-          users[user] = [{
-            "userName": doc["#userId"].name,
-            "email": doc["#recipient"].email,
-            "docID": doc["#printCopyNo"],
-            "dueDate": doc["#dueDate"]
-          }];
-          if (doc.rePrintInfo && doc.rePrintInfo.length > 0) {
-            doc.rePrintInfo.map(reDoc => {
-              if (reDoc["#printStatus"] === 'Successful') {
-                users[user].push({
-                  "userName": doc["#userId"].name,
-                  "docID": reDoc["#printCopyNo"],
-                  "dueDate": doc["#dueDate"]
-                });
-              }
-            });
-          }
-        } else {
-          users[user].push({
-            "userName": doc["#userId"].name,
-            "email": doc["#recipient"].email,
-            "docID": doc["#printCopyNo"],
-            "dueDate": doc["#dueDate"]
-          });
-          if (doc.rePrintInfo && doc.rePrintInfo.length > 0) {
-            doc.rePrintInfo.map(reDoc => {
-              if (reDoc["#printStatus"] === 'Successful') {
-                users[user].push({
-                  "userName": doc["#userId"].name,
-                  "docID": reDoc["#printCopyNo"],
-                  "dueDate": doc["#dueDate"]
-                });
-              }
-            });
-          }
-        }
-      });
-      const mailOptions = [];
-      Object.keys(users).map(key => {
-        if (users[key][0].email !== undefined && users[key][0].email.length > 0) {
-          const mailOption = {
-            to: users[key][0].email,
-            name: users[key][0].userName,
-            dueDate: users[key][0].dueDate,
-            docIds: users[key].map(d => {
-              return { docId: d.docID, dueDate: d.dueDate }
+    log.info(CONSTANTS.SOF)
+    try {
+      const db = dbClient.db(dbName);
+      const currentDate = getUTCDate(new Date());
+      const findQ = {
+        '#type': "IP",
+        '#dueDate': { '$lt': getDate(currentDate, "") },
+        'isOverdue': null,
+        '#printStatus': 'Successful'
+      };
+      const result = await db.collection(printCollectionName).find(findQ).toArray();
+      log.debug("Inside result (List of document having due-date less than current date):: " + JSON.stringify(result))
+      if (result) {
+        const users = {};
+        result.forEach(doc => {
+          const user = doc['#userId'].userName;
+          if (users[user] === undefined) {
+            users[user] = [{
+              "userName": doc["#userId"].name,
+              "email": doc["#recipient"].email,
+              "docID": doc["#printCopyNo"],
+              "dueDate": doc["#dueDate"]
+            }];
+            if (doc.rePrintInfo && doc.rePrintInfo.length > 0) {
+              doc.rePrintInfo.map(reDoc => {
+                if (reDoc["#printStatus"] === 'Successful') {
+                  users[user].push({
+                    "userName": doc["#userId"].name,
+                    "docID": reDoc["#printCopyNo"],
+                    "dueDate": doc["#dueDate"]
+                  });
+                }
+              });
             }
-            )
-          };
-          mailOptions.push(mailOption);
-        } else {
-          log.warn(CONSTANTS.EMAIL_MISSING + " " +  users[key][0].userName )
-        }
-      });
-      if (mailOptions) {
-        sendOverdueMailBulk(mailOptions, async () => {
-          updateQ = {
-            $set: {
-              'isOverdue': true
+          } else {
+            users[user].push({
+              "userName": doc["#userId"].name,
+              "email": doc["#recipient"].email,
+              "docID": doc["#printCopyNo"],
+              "dueDate": doc["#dueDate"]
+            });
+            if (doc.rePrintInfo && doc.rePrintInfo.length > 0) {
+              doc.rePrintInfo.map(reDoc => {
+                if (reDoc["#printStatus"] === 'Successful') {
+                  users[user].push({
+                    "userName": doc["#userId"].name,
+                    "docID": reDoc["#printCopyNo"],
+                    "dueDate": doc["#dueDate"]
+                  });
+                }
+              });
             }
-          };
-          const updateDocsR = await db.collection(printCollectionName).updateMany(findQ, updateQ);
+          }
         });
+        const mailOptions = [];
+        Object.keys(users).map(key => {
+          if (users[key][0].email !== undefined && users[key][0].email.length > 0) {
+            const mailOption = {
+              to: users[key][0].email,
+              name: users[key][0].userName,
+              dueDate: users[key][0].dueDate,
+              docIds: users[key].map(d => {
+                return { docId: d.docID, dueDate: d.dueDate }
+              }
+              )
+            };
+            mailOptions.push(mailOption);
+          } else {
+            log.warn(CONSTANTS.EMAIL_MISSING + " " + users[key][0].userName)
+          }
+        });
+        if (mailOptions) {
+          sendOverdueMailBulk(mailOptions, async () => {
+            updateQ = {
+              $set: {
+                'isOverdue': true
+              }
+            };
+            const updateDocsR = await db.collection(printCollectionName).updateMany(findQ, updateQ);
+          });
+        }
       }
+
+    } catch (error) {
+      log.error(CONSTANTS.ERROR_OCCURED + error)
+      req.error = CONSTANTS.SERVER_ERROR;
+      req.errorCode = 500;
     }
+    log.info(CONSTANTS.EOF)
   }
 
   async function autoRecallFun() {
-    const today = new Date()
-    today.setDate(today.getDate() - 1)
-    const query = `documents/search/infoCardVaultChange?startDate=${formatDate(today)}T${autorecalltime}`;
-    const recalledDocs = await httpReq.get(query, adminToken);
-    if (recalledDocs && recalledDocs.length > 0) {
-      const db = dbClient.db(dbName);
-      const findQ = { $and: [{ "#type": "CP" }, { "recallInfo": { $exists: false } }] };
-      const returnF = { "#recipient": 1, "#printCopyNo": 1, "@infocardNumber": 1, "@revision": 1, "#type": 1, "@infocardId": 1 };
-      const docs = await db.collection(printCollectionName).find(findQ, returnF).toArray();
-      if (docs && docs.length > 0) {
-        const intersection = docs.filter(doc => recalledDocs.includes(doc["@infocardId"]));
-        const revisionUpdated = [];
-        for (let i = 0; i < intersection.length; i++) {
-          const getDocQ = `document/${intersection[i]["@infocardId"]}/`;
-          const docInfo = await httpReq.get(getDocQ, adminToken);
-          if (docInfo && lifeCycleStatus.includes(docInfo.lifecycleStatus)) {
-            revisionUpdated.push(intersection[i]);
+    const log = logger("autoRecallFun")
+    log.info(CONSTANTS.SOF)
+    try {
+      const today = new Date()
+      today.setDate(today.getDate() - 1)
+      const query = `documents/search/infoCardVaultChange?startDate=${formatDate(today)}T${autorecalltime}`;
+      log.debug("Query for recalledDocs :: " + query)
+      const recalledDocs = await httpReq.get(query, adminToken);
+      log.debug("Inside recalledDocs :: " + JSON.stringify(recalledDocs))
+      if (recalledDocs && recalledDocs.length > 0) {
+        const db = dbClient.db(dbName);
+        const findQ = { $and: [{ "#type": "CP" }, { "recallInfo": { $exists: false } }] };
+        const returnF = { "#recipient": 1, "#printCopyNo": 1, "@infocardNumber": 1, "@revision": 1, "#type": 1, "@infocardId": 1 };
+        const docs = await db.collection(printCollectionName).find(findQ, returnF).toArray();
+        if (docs && docs.length > 0) {
+          const intersection = docs.filter(doc => recalledDocs.includes(doc["@infocardId"]));
+          log.debug("Inside intersection (including docs having infocardId matches with recalledDocs)  :: " + JSON.stringify(intersection))
+          const revisionUpdated = [];
+          for (let i = 0; i < intersection.length; i++) {
+            const getDocQ = `document/${intersection[i]["@infocardId"]}/`;
+            const docInfo = await httpReq.get(getDocQ, adminToken);
+            if (docInfo && lifeCycleStatus.includes(docInfo.lifecycleStatus)) {
+              revisionUpdated.push(intersection[i]);
+            }
           }
-        }
-        if (revisionUpdated.length > 0) {
-          const updateQ = { _id: { $in: revisionUpdated.map(d => d._id) } };
-          const recallInfo = {
-            "recallReason": "Auto Recall",
-            "recallStatus": "In-Progress",
-            "recallInitiationDate": new Date(new Date().toUTCString()),
-            "MigratedPrints": true
-          };
-          const result = await db.collection(printCollectionName).updateMany(updateQ, { $set: { "recallInfo": recallInfo } },
-            { returnOriginal: false });
-          if (result.result.ok == 1) {
-            const mailR = await mail.recallInit(revisionUpdated);
-            const notiR = await notification.sendImmediateNoti(revisionUpdated);
+          log.debug("Inside revisionUpdated :: " + JSON.stringify(revisionUpdated))
+          if (revisionUpdated.length > 0) {
+            const updateQ = { _id: { $in: revisionUpdated.map(d => d._id) } };
+            const recallInfo = {
+              "recallReason": "Auto Recall",
+              "recallStatus": "In-Progress",
+              "recallInitiationDate": new Date(new Date().toUTCString()),
+              "MigratedPrints": true
+            };
+            const result = await db.collection(printCollectionName).updateMany(updateQ, { $set: { "recallInfo": recallInfo } },
+              { returnOriginal: false });
+            if (result.result.ok == 1) {
+              const mailR = await mail.recallInit(revisionUpdated);
+              const notiR = await notification.sendImmediateNoti(revisionUpdated);
+            }
           }
         }
       }
+    } catch (error) {
+      log.error(CONSTANTS.ERROR_OCCURED + error)
     }
+    log.info(CONSTANTS.EOF)
   }
 
 
   //validate license database
   async function validateLicenseFun() {
     const log = logger("validateLicenseFun")
+    log.info(CONSTANTS.SOF)
     try {
       const value = await httpPy.post('/pyApi/validateLicense');
+      log.debug("Inside value (response from java for license validation) :: " + value)
       const db = dbClient.db(dbName);
       const result = await db.collection(validateLicenseCollectionName).findOneAndUpdate({
         organization: "pcs"
@@ -261,11 +302,12 @@ const CONSTANTS = require("../constants/messages");
         }
       });
     } catch (error) {
-      log.error("Error Occured::" + error)
+      log.error(CONSTANTS.ERROR_OCCURED + error)
     }
+    log.info(CONSTANTS.EOF)
   }
 
-  const reconcileOverdueEmailJob = schedule.scheduleJob('* 12 * * * *', reconcileOverdueEmailFun);
+  const reconcileOverdueEmailJob = schedule.scheduleJob('0 12 * * *', reconcileOverdueEmailFun);
   const autoRecallJob = schedule.scheduleJob('0 5 * * *', autoRecallFun);
   const validateLicenseJob = schedule.scheduleJob('0 5 * * *', validateLicenseFun);
 
