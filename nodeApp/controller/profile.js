@@ -56,7 +56,8 @@ module.exports = (dbClient, passport) => {
                     let profileError = "Failed to Add a Profile"
                     const query = {
                         // isDeleted: false,
-                        name: new RegExp(req.body.name.trim(), 'i')
+                        //name: new RegExp(req.body.name.trim(), 'i')
+                        name: req.body.name
                     };
                     if (req.body._id) {
                         profileError = "Failed to Update a Profile"
